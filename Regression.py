@@ -27,14 +27,8 @@ class Tools:
     @staticmethod
     def plotStyle():
         tdir = 'in'
-        major = 5.0
-        minor = 2.5
         plt.rcParams['xtick.direction'] = tdir
         plt.rcParams['ytick.direction'] = tdir
-        plt.rcParams['xtick.major.size'] = major
-        plt.rcParams['xtick.minor.size'] = minor
-        plt.rcParams['ytick.major.size'] = major
-        plt.rcParams['ytick.minor.size'] = minor
 
 
 class Regression:
@@ -179,8 +173,6 @@ class Regression:
         ax[0].axis([1.1*min(self.X), 1.1*max(self.X), 1.1*min(self.U), 1.1*max(self.U)])
         #ax[0].xaxis.set_visible(False)
         ax[0].legend()
-        ax[0].xaxis.set_minor_locator(MultipleLocator(abs(self.X[0]-self.X[1])/2))
-        ax[0].yaxis.set_minor_locator(MultipleLocator(abs(self.U[0]-self.U[1])/2))
         ax[0].grid()
 
         U_fit_X = np.array([self.scal[-1] for _ in self.X])
@@ -188,8 +180,6 @@ class Regression:
             U_fit_X += self.scal[self.ordre-d]*self.X**d
 
         ax[1].plot(self.X, [0 for _ in self.X], "--k", lw=1)
-        ax[1].xaxis.set_minor_locator(MultipleLocator(abs(self.X[0]-self.X[1])/2))
-        ax[1].yaxis.set_minor_locator(MultipleLocator(abs(self.U[0]-self.U_fit[0] - self.U[1] + U_fit_X[1])/2))
         ax[1].errorbar(self.X, abs(self.U - U_fit_X), xerr = 0, yerr = np.array(dY), fmt="o", color="k", lw=1, ms=3, capsize=3, zorder = 2, label = 'Mesures')
         ax[1].set_xlabel("X")
         ax[1].set_ylabel("Uexp(X)-U(X)")
