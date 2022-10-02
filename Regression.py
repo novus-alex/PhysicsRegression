@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
 import csv
 import numpy as np
 from random import gauss
+
 
 class Tools:
     '''
@@ -22,6 +24,18 @@ class Tools:
             return False
         return True
 
+    @staticmethod
+    def plotStyle():
+        tdir = 'in'
+        major = 5.0
+        minor = 2.5
+        plt.rcParams['xtick.direction'] = tdir
+        plt.rcParams['ytick.direction'] = tdir
+        plt.rcParams['xtick.major.size'] = major
+        plt.rcParams['xtick.minor.size'] = minor
+        plt.rcParams['ytick.major.size'] = major
+        plt.rcParams['ytick.minor.size'] = minor
+
 
 class Regression:
     '''
@@ -33,6 +47,7 @@ class Regression:
 
     def __init__(self, csv_file, ordre=1, N=1000) -> None:
         self.csv_file = csv_file; self.N = N
+        Tools.plotStyle()
         self.X, self.DX, self.U, self.DU = self.getData()
         self.X_fit, self.U_fit = self.regression(ordre)
         self.ordre = ordre
@@ -116,24 +131,70 @@ class Regression:
         
         '''
         
-        plt.plot(self.X_fit, self.U_fit, "k", lw=1, label="Regression linéaire")
+        plt.plot(self.X_fit, self.U_fit, "r", lw=1, label="Regression linéaire")
 
         dX, dY = [], []
         for i in range(len(self.X)):
             dX.append(self.DX[i]/np.sqrt(3)); dY.append(self.DU[i]/np.sqrt(3)) 
-        plt.errorbar(self.X, self.U, xerr = np.array(dX), yerr = np.array(dY), fmt = 'r+', zorder = 2, label = 'Mesures')
+        plt.errorbar(self.X, self.U, xerr = np.array(dX), yerr = np.array(dY), fmt="o", color="k", lw=1, ms=3, capsize=3, zorder = 2, label = 'Mesures')
 
         if self.ordre == 1:
             m, M = self.confidenceBand()
-            plt.fill_between(self.X_fit, m, M, alpha=0.2, label="Bande de confiance")
+            plt.fill_between(self.X_fit, m, M, alpha=0.2, label="Bande de confiance", color="r")
+            plt.title(f"Regression linéaire : U(X) = ({round(self.scal[0], 3)} ± {round(self.U_pente, 3)})*X + ({round(self.scal[1], 3)} ± {round(self.U_ordonee, 3)})")
+        else:
+            plt.title(f"Regression linéaire : U(X) = {' + '.join(f'{round(self.scal[self.ordre - i], 4)}*X^{i}' for i in range(0, self.ordre + 1))}")
 
-        plt.xlabel("Valeurs de X")
-        plt.ylabel("Valeurs de U(X)")
-        plt.title(f"Regression linéaire : U(X) = {' + '.join(f'{round(self.scal[self.ordre - i], 4)}*X^{i}' for i in range(0, self.ordre + 1))}")
-        plt.axis([min(self.X), 1.1*max(self.X), min(self.U), 1.1*max(self.U)])
-
+        plt.xlabel("X")
+        plt.ylabel("U(X)")
+        plt.axis([1.1*min(self.X), 1.1*max(self.X), 1.1*min(self.U), 1.1*max(self.U)])
         plt.legend()
         plt.grid()
+        plt.show()
+
+    def plotFullData(self):
+        '''
+        Fonction pour crée le graphe, on affiche la regression, la bande de confiance et les incertitudes de chaques points
+        
+        '''
+
+        fig, ax = plt.subplots(2, 1, gridspec_kw={'height_ratios': [3, 1]})
+        
+        ax[0].plot(self.X_fit, self.U_fit, "r", lw=1, label="Regression linéaire")
+
+        dX, dY = [], []
+        for i in range(len(self.X)):
+            dX.append(self.DX[i]/np.sqrt(3)); dY.append(self.DU[i]/np.sqrt(3)) 
+        ax[0].errorbar(self.X, self.U, xerr = np.array(dX), yerr = np.array(dY), fmt="o", color="k", lw=1, ms=3, capsize=3, zorder = 2, label = 'Mesures')
+
+        if self.ordre == 1:
+            m, M = self.confidenceBand()
+            ax[0].fill_between(self.X_fit, m, M, alpha=0.2, label="Bande de confiance", color="r")
+            ax[0].set_title(f"Regression linéaire : U(X) = ({round(self.scal[0], 3)} ± {round(self.U_pente, 3)})*X + ({round(self.scal[1], 3)} ± {round(self.U_ordonee, 3)})")
+        else:
+            ax[0].set_title(f"Regression linéaire : U(X) = {' + '.join(f'{round(self.scal[self.ordre - i], 4)}*X^{i}' for i in range(0, self.ordre + 1))}")
+
+        ax[0].set_xlabel("X")
+        ax[0].set_ylabel("U(X)")
+        ax[0].axis([1.1*min(self.X), 1.1*max(self.X), 1.1*min(self.U), 1.1*max(self.U)])
+        #ax[0].xaxis.set_visible(False)
+        ax[0].legend()
+        ax[0].xaxis.set_minor_locator(MultipleLocator(abs(self.X[0]-self.X[1])/2))
+        ax[0].yaxis.set_minor_locator(MultipleLocator(abs(self.U[0]-self.U[1])/2))
+        ax[0].grid()
+
+        U_fit_X = np.array([self.scal[-1] for _ in self.X])
+        for d in range(1, self.ordre + 1):
+            U_fit_X += self.scal[self.ordre-d]*self.X**d
+
+        ax[1].plot(self.X, [0 for _ in self.X], "--k", lw=1)
+        ax[1].xaxis.set_minor_locator(MultipleLocator(abs(self.X[0]-self.X[1])/2))
+        ax[1].yaxis.set_minor_locator(MultipleLocator(abs(self.U[0]-self.U_fit[0] - self.U[1] + U_fit_X[1])/2))
+        ax[1].errorbar(self.X, abs(self.U - U_fit_X), xerr = 0, yerr = np.array(dY), fmt="o", color="k", lw=1, ms=3, capsize=3, zorder = 2, label = 'Mesures')
+        ax[1].set_xlabel("X")
+        ax[1].set_ylabel("Uexp(X)-U(X)")
+        
+        plt.subplots_adjust(wspace=0, hspace=0)
         plt.show()
 
     def __str__(self) -> str:
