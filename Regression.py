@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import csv
 import numpy as np
+from random import gauss
 
 class Tools:
     '''
@@ -91,13 +92,31 @@ class Regression:
         
         return x_fit, U_fit
 
+    def confidenceBand(self):
+        '''
+        Fonction pour calculer la bande de confiance de la regression
+        
+        '''
+        
+        Aalea, Balea = [], []
+        for i in range(len(self.X_fit)):
+            Xalea = [gauss(self.X[_], self.DX[_]) for _ in range(len(self.X))]
+            Yalea = [gauss(self.U[_], self.DU[_]) for _ in range(len(self.U))]
+            a, b = np.polyfit(Xalea, Yalea, 1)
+            Aalea.append(a); Balea.append(b)
+        M, m = [], []
+        for i in self.X_fit:
+            M.append(max([Aalea[_]*i + Balea[_] for _ in range(len(Aalea))]))
+            m.append(min([Aalea[_]*i + Balea[_] for _ in range(len(Aalea))]))
+        return m, M
+
     def plotData(self):
         '''
         Fonction pour crée le graphe, on affiche la regression, la bande de confiance et les incertitudes de chaques points
         
         '''
         
-        plt.plot(self.X_fit, self.U_fit, label="Regression linéaire")
+        plt.plot(self.X_fit, self.U_fit, "k", lw=1, label="Regression linéaire")
 
         dX, dY = [], []
         for i in range(len(self.X)):
@@ -105,9 +124,8 @@ class Regression:
         plt.errorbar(self.X, self.U, xerr = np.array(dX), yerr = np.array(dY), fmt = 'r+', zorder = 2, label = 'Mesures')
 
         if self.ordre == 1:
-            U_pente = np.linspace(self.scal[0] - self.U_pente, self.scal[0] + self.U_pente, 100)
-            U_ordonnee = np.linspace(self.scal[1] - self.U_ordonee, self.scal[1] + self.U_ordonee, 100)
-            plt.fill_between(self.X_fit, U_pente[0]*self.X_fit + U_ordonnee[0], U_pente[-1]*self.X_fit + U_ordonnee[-1], alpha=0.2, label="Bande de confiance")
+            m, M = self.confidenceBand()
+            plt.fill_between(self.X_fit, m, M, alpha=0.2, label="Bande de confiance")
 
         plt.xlabel("Valeurs de X")
         plt.ylabel("Valeurs de U(X)")
@@ -117,3 +135,8 @@ class Regression:
         plt.legend()
         plt.grid()
         plt.show()
+
+    def __str__(self) -> str:
+        if self.ordre == 1:
+            return f"Regression linéaire : U(X) = ({round(self.scal[0], 3)} ± {round(self.U_pente, 3)})*X + ({round(self.scal[1], 3)} ± {round(self.U_ordonee, 3)})"
+        return f"Regression linéaire : U(X) = {' + '.join(f'({round(self.scal[self.ordre - i], 6)})*X^{i}' for i in range(0, self.ordre + 1))}"
