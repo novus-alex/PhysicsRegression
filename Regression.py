@@ -1,3 +1,10 @@
+'''
+Palmero Pierre-Antoine
+Hachet Alexandre
+
+2022/2023
+'''
+
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 import csv
@@ -124,33 +131,6 @@ class Regression:
         Fonction pour crée le graphe, on affiche la regression, la bande de confiance et les incertitudes de chaques points
         
         '''
-        
-        plt.plot(self.X_fit, self.U_fit, "r", lw=1, label="Regression linéaire")
-
-        dX, dY = [], []
-        for i in range(len(self.X)):
-            dX.append(self.DX[i]/np.sqrt(3)); dY.append(self.DU[i]/np.sqrt(3)) 
-        plt.errorbar(self.X, self.U, xerr = np.array(dX), yerr = np.array(dY), fmt="o", color="k", lw=1, ms=3, capsize=3, zorder = 2, label = 'Mesures')
-
-        if self.ordre == 1:
-            m, M = self.confidenceBand()
-            plt.fill_between(self.X_fit, m, M, alpha=0.2, label="Bande de confiance", color="r")
-            plt.title(f"Regression linéaire : U(X) = ({round(self.scal[0], 3)} ± {round(self.U_pente, 3)})*X + ({round(self.scal[1], 3)} ± {round(self.U_ordonee, 3)})")
-        else:
-            plt.title(f"Regression linéaire : U(X) = {' + '.join(f'{round(self.scal[self.ordre - i], 4)}*X^{i}' for i in range(0, self.ordre + 1))}")
-
-        plt.xlabel("X")
-        plt.ylabel("U(X)")
-        plt.axis([1.1*min(self.X), 1.1*max(self.X), 1.1*min(self.U), 1.1*max(self.U)])
-        plt.legend()
-        plt.grid()
-        plt.show()
-
-    def plotFullData(self):
-        '''
-        Fonction pour crée le graphe, on affiche la regression, la bande de confiance et les incertitudes de chaques points
-        
-        '''
 
         fig, ax = plt.subplots(2, 1, gridspec_kw={'height_ratios': [3, 1]})
         
@@ -170,8 +150,6 @@ class Regression:
 
         ax[0].set_xlabel("X")
         ax[0].set_ylabel("U(X)")
-        ax[0].axis([1.1*min(self.X), 1.1*max(self.X), 1.1*min(self.U), 1.1*max(self.U)])
-        #ax[0].xaxis.set_visible(False)
         ax[0].legend()
         ax[0].grid()
 
@@ -191,3 +169,7 @@ class Regression:
         if self.ordre == 1:
             return f"Regression linéaire : U(X) = ({round(self.scal[0], 3)} ± {round(self.U_pente, 3)})*X + ({round(self.scal[1], 3)} ± {round(self.U_ordonee, 3)})"
         return f"Regression linéaire : U(X) = {' + '.join(f'({round(self.scal[self.ordre - i], 6)})*X^{i}' for i in range(0, self.ordre + 1))}"
+
+
+m = Regression('test.csv', 1)
+m.plotData()
